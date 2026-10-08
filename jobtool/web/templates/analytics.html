@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Tech stack{% endblock %}
+{% block content %}
+<h1>Most requested technologies</h1>
+<form method="get" class="filters">
+  <select name="country" aria-label="Country">
+    <option value="">All countries</option>
+    {% for c in facets.countries %}<option {% if country == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <select name="source" aria-label="Source">
+    <option value="">All sources</option>
+    {% for s in facets.sources %}<option {% if source == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <button>Apply</button>
+</form>
+<p class="count">Share of {{ total }} job{{ 's' if total != 1 }} that mention each technology (top {{ counts|length }}). Click a bar to see those jobs.</p>
+{% if counts %}
+<figure class="card chart">
+  <figcaption class="sr-only">Number of jobs mentioning each technology, sorted by count.</figcaption>
+  <ol class="bars">
+    {% for tag, n in counts %}
+    {% set pct = (100 * n / total) if total else 0 %}
+    <li>
+      <a href="/?tech={{ tag|urlencode }}{% if country %}&amp;country={{ country|urlencode }}{% endif %}{% if source %}&amp;source={{ source|urlencode }}{% endif %}"
+         class="bar-row" data-tip="{{ tech_label(tag) }}: {{ n }} of {{ total }} jobs ({{ '%.0f'|format(pct) }}%) · {{ categories.get(tag, 'other') }}">
+        <span class="bar-label">{{ tech_label(tag) }}</span>
+        <span class="bar-track"><span class="bar" style="width: {{ '%.2f'|format(100 * n / max_count) }}%"></span><span class="bar-value">{{ n }} <small>{{ '%.0f'|format(pct) }}%</small></span></span>
+      </a>
+    </li>
+    {% endfor %}
+  </ol>
+</figure>
+{% else %}
+<div class="empty">No data yet.</div>
+{% endif %}
+{% endblock %}

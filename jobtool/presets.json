@@ -1,0 +1,9 @@
+[
+  {"role": "developer", "keywords": ["python"], "country": "AT"},
+  {"role": "developer", "keywords": ["java"], "country": "AT"},
+  {"role": "developer", "keywords": ["javascript"], "location": "Wien", "country": "AT"},
+  {"role": "software engineer", "country": "AT"},
+  {"role": "developer", "keywords": ["python"], "country": "SE"},
+  {"role": "developer", "location": "Stockholm", "country": "SE"},
+  {"role": "developer", "location": "Göteborg", "country": "SE"}
+]

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/*.db
+data/*.db-*
+.pytest_cache/
+*.egg-info/
+
+# Local-only files
+job-application-tool.md
+.claude/

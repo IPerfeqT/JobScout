@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "_macros.html" import flag_buttons, status_controls, tags %}
+{% block content %}
+
+{% if not settings.is_demo %}
+<details class="card search" {% if not total %}open{% endif %}>
+  <summary>Run a new search</summary>
+  <form method="post" action="/search" class="grid-form">
+    <label>Role <input name="role" placeholder="developer"></label>
+    <label>Keywords <input name="keywords" placeholder="python django"></label>
+    <label>Location <input name="location" placeholder="Wien, Stockholm"></label>
+    <label>Country
+      <select name="country"><option value="">All</option><option>AT</option><option>SE</option><option>DE</option></select>
+    </label>
+    <label>Level
+      <select name="level"><option value="">Any</option><option>junior</option><option>mid</option><option>senior</option><option>lead</option></select>
+    </label>
+    <label class="check"><input type="checkbox" name="remote" value="1"> Remote / hybrid</label>
+    <button class="primary">Search</button>
+  </form>
+  {% if search_state.running %}<p class="note">A search is running. Refresh in a minute.</p>{% endif %}
+  {% if search_state.last %}
+  <p class="note">Last search <strong>{{ search_state.last.filters }}</strong>: {{ search_state.last.inserted }} new,
+    {{ search_state.last.merged }} merged duplicates.
+    {% for o in search_state.last.outcomes %}{{ o.site_id }}: {% if o.ok %}{{ o.count }}{% if o.from_cache %} (cached){% endif %}{% else %}<span class="bad">failed</span>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+</details>
+{% endif %}
+
+{% set base = params.copy() %}{% set _ = base.pop('status', None) %}
+<nav class="status-tabs" aria-label="Status">
+  <a href="/?{{ base|urlencode }}" {% if not params.status %}aria-current="page"{% endif %}>All <span>{{ counts.values()|sum }}</span></a>
+  {% for s in STATUSES %}
+  <a href="/?{{ dict(base, status=s)|urlencode }}" {% if params.status == s %}aria-current="page"{% endif %}>{{ s|capitalize }} <span>{{ counts[s] }}</span></a>
+  {% endfor %}
+</nav>
+
+<form method="get" action="/" class="filters">
+  {% if params.status %}<input type="hidden" name="status" value="{{ params.status }}">{% endif %}
+  {% if params.tech %}<input type="hidden" name="tech" value="{{ params.tech }}">{% endif %}
+  <input name="q" value="{{ params.q or '' }}" placeholder="Title, company, city" aria-label="Text search">
+  <select name="country" aria-label="Country">
+    <option value="">All countries</option>
+    {% for c in facets.countries %}<option {% if params.country == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <select name="source" aria-label="Source">
+    <option value="">All sources</option>
+    {% for s in facets.sources %}<option {% if params.source == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="flag" aria-label="Flag">
+    <option value="">Any flag</option>
+    <option value="none" {% if params.flag == 'none' %}selected{% endif %}>Unflagged</option>
+    {% for f in FLAGS %}<option value="{{ f }}" {% if params.flag == f %}selected{% endif %}>{{ f|capitalize }}</option>{% endfor %}
+  </select>
+  <select name="days" aria-label="Posted within">
+    <option value="">Any date</option>
+    {% for d in [1, 3, 7, 14, 30] %}<option value="{{ d }}" {% if params.days == d|string %}selected{% endif %}>Last {{ d }} day{{ 's' if d > 1 }}</option>{% endfor %}
+  </select>
+  <input name="min_salary" type="number" step="5000" min="0" value="{{ params.min_salary or '' }}" placeholder="Min € / year" aria-label="Minimum yearly salary in EUR">
+  <select name="sort" aria-label="Sort">
+    <option value="posted">Newest posted</option>
+    <option value="seen" {% if params.sort == 'seen' %}selected{% endif %}>Recently found</option>
+    <option value="salary" {% if params.sort == 'salary' %}selected{% endif %}>Highest salary</option>
+  </select>
+  <label class="check"><input type="checkbox" name="show_declined" value="1" {% if params.show_declined %}checked{% endif %}> Show declined</label>
+  <button>Filter</button>
+  {% if params %}<a class="reset" href="/">Reset</a>{% endif %}
+</form>
+
+{% if params.tech %}
+{% set nt = params.copy() %}{% set _ = nt.pop('tech') %}
+<p class="note">Tech filter: <strong>{{ tech_label(params.tech) }}</strong> · <a href="/?{{ nt|urlencode }}">remove</a></p>
+{% endif %}
+
+<p class="count">{{ total }} job{{ 's' if total != 1 }}</p>
+
+{% if not jobs %}
+<div class="empty">
+  {% if settings.is_demo %}No jobs match these filters.
+  {% else %}No jobs yet. Run a search above, or <code>python -m jobtool refresh</code>.{% endif %}
+</div>
+{% endif %}
+
+<ol class="jobs">
+  {% for job in jobs %}
+  <li class="job {% if job.flag %}flagged-{{ job.flag }}{% endif %}">
+    <div class="job-main">
+      <h2><a href="/jobs/{{ job.id }}?back={{ current_url|urlencode }}">{{ job.title }}</a></h2>
+      <p class="meta">
+        <span>{{ job.company or 'Unknown company' }}</span>
+        <span>{{ job.location }} · {{ job.country }}</span>
+        {% if job.salary %}<span class="salary">{{ job.salary }}</span>{% endif %}
+        {% if job.remote %}<span class="pill">Remote/hybrid</span>{% endif %}
+        <span class="muted">{{ job.posted_date or job.first_seen[:10] }}</span>
+        <span class="muted">{{ job.sources|join(', ') }}</span>
+      </p>
+      {{ tags(job) }}
+    </div>
+    <div class="job-actions">
+      {{ flag_buttons(job, current_url) }}
+      {{ status_controls(job, current_url) }}
+    </div>
+  </li>
+  {% endfor %}
+</ol>
+
+{% if pages > 1 %}
+<nav class="pager" aria-label="Pages">
+  {% if page > 1 %}<a href="/?{{ dict(params, page=page-1)|urlencode }}">← Previous</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a href="/?{{ dict(params, page=page+1)|urlencode }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

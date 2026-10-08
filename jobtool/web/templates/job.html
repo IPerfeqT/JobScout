@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_macros.html" import flag_buttons, status_controls, tags %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block content %}
+<p><a href="{{ back }}">← Back to list</a></p>
+<article class="card detail">
+  <h1>{{ job.title }}</h1>
+  <p class="meta">
+    <span>{{ job.company or 'Unknown company' }}</span>
+    <span>{{ job.location }} · {{ job.country }}</span>
+    {% if job.salary %}<span class="salary">{{ job.salary }}</span>{% endif %}
+    {% if job.remote %}<span class="pill">Remote/hybrid</span>{% endif %}
+    <span class="muted">Level (guessed from the title): {{ job.level }}</span>
+    <span class="muted">Posted {{ job.posted_date or 'unknown' }} · first seen {{ job.first_seen[:10] }}</span>
+  </p>
+  <div class="job-actions wide">
+    {{ flag_buttons(job, current_url) }}
+    {{ status_controls(job, current_url) }}
+  </div>
+  {{ tags(job, 40) }}
+  <h2>Original ad{{ 's' if job.urls|length > 1 }}</h2>
+  <ul class="links">
+    {% for u in job.urls %}<li><a href="{{ u.url }}" rel="noopener noreferrer" target="_blank">{{ u.url }}</a> <span class="muted">({{ u.source_site }})</span></li>{% endfor %}
+  </ul>
+  <h2>Description</h2>
+  <div class="description">{{ job.description or 'No description available.' }}</div>
+</article>
+{% endblock %}

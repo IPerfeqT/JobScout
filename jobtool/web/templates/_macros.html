@@ -1,0 +1,40 @@
+{% macro flag_buttons(job, next_url) %}
+<div class="flags" role="group" aria-label="Triage">
+  {% for f, label in [('approve', 'Approve'), ('unsure', 'Unsure'), ('decline', 'Decline')] %}
+  <form method="post" action="/jobs/{{ job.id }}/flag">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <input type="hidden" name="flag" value="{{ '' if job.flag == f else f }}">
+    <button class="flag flag-{{ f }}{% if job.flag == f %} on{% endif %}" aria-pressed="{{ 'true' if job.flag == f else 'false' }}"
+            title="{{ 'Clear flag' if job.flag == f else label }}">{{ label }}</button>
+  </form>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro status_controls(job, next_url) %}
+<div class="status-controls">
+  <span class="pill status-{{ job.status }}">{{ job.status|capitalize }}</span>
+  {% for target in TRANSITIONS[job.status] if not (job.status == 'new' and target == 'approved') %}
+  <form method="post" action="/jobs/{{ job.id }}/status">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <input type="hidden" name="status" value="{{ target }}">
+    <button class="link-btn">
+      {%- if job.status != 'rejected' and STATUSES.index(target) < STATUSES.index(job.status) -%}
+        ← back to {{ target }}
+      {%- else -%}
+        → {{ target }}
+      {%- endif -%}
+    </button>
+  </form>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro tags(job, limit=8) %}
+{% if job.tech_tags %}
+<ul class="tags">
+  {% for t in job.tech_tags[:limit] %}<li><a href="/?tech={{ t|urlencode }}">{{ tech_label(t) }}</a></li>{% endfor %}
+  {% if job.tech_tags|length > limit %}<li class="more">+{{ job.tech_tags|length - limit }}</li>{% endif %}
+</ul>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Sources{% endblock %}
+{% block content %}
+<h1>Sources</h1>
+<p class="note">Each site is an extension that is discovered automatically. A failing extension is skipped, and the others keep running.
+HTML extensions only fetch paths that the site's robots.txt allows. Results are cached per extension and search for {{ settings.cache_ttl_min }} minutes.</p>
+<div class="table-wrap card">
+<table>
+  <thead><tr><th>Source</th><th>Country</th><th>Access</th><th>State</th><th>Last live run</th></tr></thead>
+  <tbody>
+  {% for e in extensions %}
+  <tr>
+    <td><a href="{{ e.base_url }}" rel="noopener noreferrer" target="_blank">{{ e.name }}</a> <span class="muted">v{{ e.version }}</span></td>
+    <td>{{ e.country }}</td>
+    <td>{{ e.access_method }}</td>
+    <td>
+      {% if not e.enabled %}<span class="pill status-rejected">Disabled</span> <span class="muted">{{ e.disabled_reason }}</span>
+      {% elif not e.active %}<span class="pill">Private only</span>
+      {% else %}<span class="pill status-offer">Active</span>{% endif %}
+    </td>
+    <td>
+      {% if e.last %}
+        {% if e.last.ok %}✓ {{ e.last.n_results }} listings{% else %}<span class="bad">✗ failed</span>{% endif %}
+        <span class="muted">{{ e.last.started_at[:16]|replace('T', ' ') }} UTC</span>
+        {% if e.last.n_robots_skipped %}<span class="muted">· {{ e.last.n_robots_skipped }} skipped (robots.txt)</span>{% endif %}
+      {% else %}<span class="muted">never</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
